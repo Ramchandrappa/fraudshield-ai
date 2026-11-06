@@ -78,13 +78,17 @@ def risk_gauge(score: float) -> go.Figure:
 # --------------------------------------------------------------------------- sidebar
 st.sidebar.title("🛡️ FraudShield AI")
 st.sidebar.caption("AI-Powered Fraud Detection System")
-page = st.sidebar.radio("Navigate", [
-    "📊 Dashboard",
-    "🔍 Check a Transaction",
-    "📁 Batch Scan (CSV)",
-    "📈 Model Performance",
-    "🤖 How the AI Works",
-])
+PAGES = {
+    "dashboard": "📊 Dashboard",
+    "check": "🔍 Check a Transaction",
+    "batch": "📁 Batch Scan (CSV / Excel)",
+    "performance": "📈 Model Performance",
+    "about": "🤖 How the AI Works",
+}
+# direct links such as  http://localhost:8501/?page=check&example=suspicious
+_start = list(PAGES).index(st.query_params.get("page", "dashboard")) \
+    if st.query_params.get("page") in PAGES else 0
+page = st.sidebar.radio("Navigate", list(PAGES.values()), index=_start)
 st.sidebar.divider()
 st.sidebar.markdown(
     f"**Models:** Random Forest + Isolation Forest  \n"
@@ -166,7 +170,8 @@ elif page == "🔍 Check a Transaction":
             st.session_state[f"f_{k}"] = v
 
     if "f_amount" not in st.session_state:
-        apply_preset("normal")
+        example = st.query_params.get("example", "normal")
+        apply_preset(example if example in PRESETS else "normal")
 
     b1, b2, b3, _ = st.columns([1, 1, 1, 3])
     b1.button("✅ Normal example", on_click=apply_preset, args=("normal",))
@@ -238,22 +243,27 @@ elif page == "🔍 Check a Transaction":
 
 
 # =========================================================================== BATCH
-elif page == "📁 Batch Scan (CSV)":
+elif page == "📁 Batch Scan (CSV / Excel)":
     st.title("📁 Scan a Batch of Transactions")
-    st.caption("Upload a CSV of new transactions (e.g. yesterday's activity). The AI scores every "
+    st.caption("Upload a CSV or Excel file of new transactions (e.g. yesterday's activity). The AI scores every "
                "row and lists the ones investigators should look at first.")
 
-    with st.expander("Required CSV columns"):
+    with st.expander("Required columns"):
         st.code("amount, customer_avg_amount, merchant_category, channel, hour,\n"
                 "distance_from_home_km, is_foreign, is_new_device, txn_count_24h")
         st.caption(f"merchant_category: {', '.join(CATEGORIES)}  \nchannel: {', '.join(CHANNELS)}")
 
-    up = st.file_uploader("Upload transactions CSV", type="csv")
+    up = st.file_uploader("Upload transactions (CSV or Excel)", type=["csv", "xlsx"],
+                          help="For Excel files the first sheet is read; row 1 must hold the column names.")
     use_sample = st.toggle("Use the built-in sample file (1,000 new, unseen transactions)", value=up is None)
 
     raw = None
     if up is not None and not use_sample:
-        raw = pd.read_csv(up)
+        try:
+            raw = pd.read_excel(up) if up.name.lower().endswith(".xlsx") else pd.read_csv(up)
+        except Exception as e:  # unreadable / corrupt file
+            st.error(f"Could not read the file: {e}")
+            st.stop()
     elif use_sample:
         raw = pd.read_csv(SAMPLE_PATH)
 
