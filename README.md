@@ -3,6 +3,12 @@
 A web app that uses AI (a Random Forest combined with an Isolation Forest) to score card
 transactions, flag suspicious ones based on unusual patterns, and explain each decision.
 
+## 🔗 Live app
+
+**https://fraudshield-daksh-itha-sree.streamlit.app**
+
+Works on any computer or phone, with no sign-in. If you see *"Yes, get this app back up!"*, click it and wait about 30 seconds while it wakes up.
+
 ## Reports
 
 | Report | Format |
@@ -50,7 +56,8 @@ python fraud_model.py
 Add `?page=` to the app address to open a page directly: `dashboard`, `check`, `batch`, `performance` or `about`.
 On the Check page, add `&example=normal`, `borderline` or `suspicious`.
 
-For example: http://localhost:8501/?page=check&example=suspicious
+For example: https://fraudshield-daksh-itha-sree.streamlit.app/?page=check&example=suspicious
+(or http://localhost:8501/?page=check&example=suspicious when running on your own computer)
 
 ## Demo script for the presentation
 
